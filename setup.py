@@ -4,16 +4,20 @@ from setuptools import setup, find_packages
 import howdoi
 import os
 
-
+# For dependency list add argparse when Python version < 2.7.
+# Retrun list for extra installation -> [] or ['argparse']
 def extra_dependencies():
     import sys
     return ['argparse'] if sys.version_info < (2, 7) else []
 
 
+# From list of files suffix build dict which would be used
+# to create long_description in package metadata.
+# Files have to end with txt or rst suffix. First is taken. If not give string "No description for <name> found."
 def read(*names):
     values = dict()
     for name in names:
-        value = ''
+        value = 'No description for {0} found!'.format(name)
         for extension in ('.txt', '.rst'):
             filename = name + extension
             if os.path.isfile(filename):
@@ -23,7 +27,8 @@ def read(*names):
         values[name] = value
     return values
 
-
+# Description used in application metadata.
+# String formatting used.
 long_description = """
 %(README)s
 
@@ -34,6 +39,8 @@ News
 
 """ % read('README', 'CHANGES')
 
+# Using <package>.__version__ is ok, because find_packages()
+# function is used, so it clasify package if it has __init__.py file
 setup(
     name='howdoi',
     version=howdoi.__version__,

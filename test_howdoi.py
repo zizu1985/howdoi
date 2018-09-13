@@ -4,17 +4,48 @@
 import os
 import unittest
 import re
+import subprocess
+import ctypes
+import sys
 
 from howdoi import howdoi
 from pyquery import PyQuery as pq
 
 class HowdoiTestCase(unittest.TestCase):
     def call_howdoi(self, query):
+        """ Crete parser. Parser musi ustawiac sparsowane argumenty jako atrybuty. Dlatego pojawia sie vars.
+            vars zwraca slownik gdzie kluczem jest atrybutu. Vars
+        """
         parser = howdoi.get_parser()
         args = vars(parser.parse_args(query.split(' ')))
         return howdoi.howdoi(args)
 
+    def disable_network(self):
+        """ Disable 2 nics required to disable network """
+        if self._is_admin():
+            completed = subprocess.run(args=['netsh', 'interface', 'set', 'interface', '"Wi-Fi"', 'disable'])
+            print("Disable Wi-Fi ", completed.returncode)
+            completed = subprocess.run(args=['netsh', 'interface', 'set', 'interface', '"Ethernet"', 'disable'])
+            print("Disable Ethernet", completed.returncode)
+        else:
+            # Re-run the program with admin rights
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", 'netsh', ' interface set interface "Wi-Fi" disable', None, 1)
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", 'netsh', ' interface set interface "Ethernet" disable', None, 1)
+
+    def enable_network(self):
+        """ Enable 2 nics required to enable network """
+        if self._is_admin():
+            completed = subprocess.run(args=['netsh', 'interface', 'set', 'interface', '"Wi-Fi"', 'enable'])
+            print("Enable Wi-Fi ", completed.returncode)
+            completed = subprocess.run(args=['netsh', 'interface', 'set', 'interface', '"Ethernet"', 'enable'])
+            print("Enable Ethernet", completed.returncode)
+        else:
+            # Re-run the program with admin rights
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", 'netsh', ' interface set interface "Ethernet" enable', None, 1)
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", 'netsh', ' interface set interface "Wi-Fi" enable', None, 1)
+
     def setUp(self):
+        """ Create 3 list: 1st with proper queries in english, 2nd proper with , 3rd with wrong queries """
         self.queries = ['format date bash',
                         'print stack trace python',
                         'convert mp4 to animated gif',
@@ -25,6 +56,12 @@ class HowdoiTestCase(unittest.TestCase):
                            'hello world em c']
         self.bad_queries = ['moe',
                             'mel']
+
+    def _is_admin(self):
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
 
     def tearDown(self):
         pass
@@ -41,7 +78,15 @@ class HowdoiTestCase(unittest.TestCase):
         self.assertEqual(howdoi.get_link_at_pos(['/questions/42/', '/questions/142/'], 1),
                          '/questions/42/')
 
+    def test_bad_queries(self):
+            """ Tozipl test """
+            self.assertEqual(self.call_howdoi("Jak skompresowac plik?"), "Sorry, couldn't find any help with that topic\n", "Zle pytania daja dobra odpowiedz!")
+
     def test_answers(self):
+        """
+            Jezeli dostanie odpowiedz jakas to zwraca True. Jezeli nie potrafi to False.
+            Jezelie ni moze sie podlaczyc to zwraca wyjatek.
+        """
         for query in self.queries:
             self.assertTrue(self.call_howdoi(query))
         for query in self.bad_queries:
@@ -52,6 +97,9 @@ class HowdoiTestCase(unittest.TestCase):
             self.assertTrue(self.call_howdoi(query))
 
     def test_answers_bing(self):
+        """ Test with using bing search engine.
+            Search engine changed by set environment variable
+        """
         os.environ['HOWDOI_SEARCH_ENGINE'] = 'bing'
         for query in self.queries:
             self.assertTrue(self.call_howdoi(query))
@@ -63,6 +111,13 @@ class HowdoiTestCase(unittest.TestCase):
             self.assertTrue(self.call_howdoi(query))
 
         os.environ['HOWDOI_SEARCH_ENGINE'] = ''
+
+    def test_when_net_is_disabled(self):
+        """ Put strange value as search engine. Something which does not exist in SEARCH_URLS"""
+        self.disable_network()
+        for query in self.queries:
+            self.assertTrue(self.call_howdoi(query))
+        self.enable_network()
 
     def test_answer_links_using_l_option(self):
         for query in self.queries:
