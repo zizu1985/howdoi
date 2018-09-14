@@ -3,7 +3,14 @@
 3. Co bedzie jezeli zadamy pytanie portugalskie do ang ?
 4. Przetestowanie z googlem / defaultem.
 5. Wyszukiwnie z silnkiem ktory nie istnieje. Oczekiwanie: Zwroci blad.
-6
+6. HOWDOI_URL -> ustawic zla zmienna i zobaczymy co bedzie
+7. Bad query nie powinno generowac linka.
+8. Wybranie pozycji poza skala musi zwrocic ostatnia pozycje.
+9. [Q] Czy mozna zobaczyc ile jest pozycji w odpowiedzi.
+[DONE] 10. Sprawdzic czy nie podanie poyzji oznacza pierwsza pozyacje
+11. [Q] Jezeli opcja -n3 podaje 3 odpowiedzi. Opcje -p1 -p2 -p3 pozwalaja wyswietlic odpowiedzi odpowiedno z pozycji 1 2 lub 3.
+    To dlaczego opcja -all nie wyswietla wszystkich pozycji?
+12.
 
 
 Sa dwa rodzaje zlych zapytan:
