@@ -6,6 +6,11 @@
 # written by Benjamin Gleitzman (gleitz@mit.edu)
 # inspired by Rich Jones (rich@anomos.info)
 #
+# Environemt variable used by application:
+#   HOWDOI_DISABLE_SSL - use http/https connections. If enabled then certificate will be validated.
+#   HOWDOI_URL - zrodlo do ktorego sa kierowane zapytania
+#   XDG_CACHE_HOME - lokalizacja folderu dla cache. Domyslnie ~/.cache
+#
 ######################################################
 
 import argparse
@@ -28,6 +33,7 @@ from requests.exceptions import ConnectionError
 from requests.exceptions import SSLError
 
 # Handle imports for Python 2 and 3
+# Funkcka u pomaga uzywac Unicode
 if sys.version < '3':
     import codecs
     from urllib import quote as url_quote
@@ -43,7 +49,8 @@ else:
     def u(x):
         return x
 
-
+### Konfiguracja zmiennych systemowych uzywanych przez aplikacja.
+### Uzycie modulu os do operowania na zmiennych srodowiskowych
 if os.getenv('HOWDOI_DISABLE_SSL'):  # Set http instead of https
     SCHEME = 'http://'
     VERIFY_SSL_CERTIFICATE = False
@@ -53,6 +60,7 @@ else:
 
 URL = os.getenv('HOWDOI_URL') or 'stackoverflow.com'
 
+# List przegladerek. Pewnie do ustawienia w polaczeniu do stackoverflow.
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
                'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
                'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',
@@ -60,18 +68,27 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/2010
                 'Chrome/19.0.1084.46 Safari/536.5'),
                ('Mozilla/5.0 (Windows; Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46'
                 'Safari/536.5'), )
+# Mapa nazwa przegladarki -> adres
 SEARCH_URLS = {
     'bing': SCHEME + 'www.bing.com/search?q=site:{0}%20{1}',
     'google': SCHEME + 'www.google.com/search?q=site:{0}%20{1}'
 }
+# Black start i format do odpowiedzi. Jezeli uzyty parameter -n z wiecej niz 1.
 STAR_HEADER = u('\u2605')
 ANSWER_HEADER = u('{2}  Answer from {0} {2}\n{1}')
+# Wyswietlane gdy istnieje odpowiedz (znaleziono ja), ale nie ma dla niej tekstu
 NO_ANSWER_MSG = '< no answer given >'
+# Lokalizacja cache.
+# Czym rozni sie os.getenv od os.environ.get ? Odp.: os.environ.get pozwala ustawic domyslna wartosc.
+# Przy os.getenv trzeba sprawdzac czy istnieje zmienna i odpowiednio na to reagowac
 XDG_CACHE_DIR = os.environ.get('XDG_CACHE_HOME',
                                os.path.join(os.path.expanduser('~'), '.cache'))
+# Directory for cache
 CACHE_DIR = os.path.join(XDG_CACHE_DIR, 'howdoi')
+# Lokalizacja pliku cache uzalezniona od wersji Pythona. Ale po co ?
 CACHE_FILE = os.path.join(CACHE_DIR, 'cache{0}'.format(
     sys.version_info[0] if sys.version_info[0] == 3 else ''))
+# sesja do pobierania zasobow z netu
 howdoi_session = requests.session()
 
 
@@ -281,6 +298,10 @@ def howdoi(args):
 
 
 def get_parser():
+    """
+    Zwracamy parser. Definiujemy opcje dla parsera. Opcja ma 2 skroty (jak w linuxie), help text, domyslna wartosc oraz typ danych
+    :return: Parser with defined command line arguments.
+    """
     parser = argparse.ArgumentParser(description='instant coding answers via the command line')
     parser.add_argument('query', metavar='QUERY', type=str, nargs='*',
                         help='the question to answer')
@@ -301,8 +322,10 @@ def get_parser():
 
 def command_line_runner():
     parser = get_parser()
+    # Aby pobrac wartosci ustawione przez uzytkownika trzeba uzyc vars. Mamy slownik argument -> nazwa
     args = vars(parser.parse_args())
 
+    // jezeli jest wersja
     if args['version']:
         print(__version__)
         return
