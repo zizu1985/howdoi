@@ -10,6 +10,9 @@
 #   HOWDOI_DISABLE_SSL - use http/https connections. If enabled then certificate will be validated.
 #   HOWDOI_URL - zrodlo do ktorego sa kierowane zapytania
 #   XDG_CACHE_HOME - lokalizacja folderu dla cache. Domyslnie ~/.cache
+#   HOWDOI_DISABLE_CACHE (default: ) - czy cache jest wlaczony. Jezeli taka zmienna jest ustawiona to cache jest wylaczony.
+#   HOWDOI_COLORIZE - kolorowanie outputu. Jezeli ustawie ta zmianna to niezaleznie od tego czy -c jest ustawione czy nie
+#
 #
 ######################################################
 
@@ -105,6 +108,12 @@ def get_proxies():
 
 
 def _get_result(url):
+    """
+        Get result using agent and proxy and ssl (if set).
+        SSL exception is printed here. Other exceptions are passed through.
+    :param url: Zapytanie uzytkownika
+    :return: Pobrana odpowiedz.
+    """
     try:
         return howdoi_session.get(url, headers={'User-Agent': random.choice(USER_AGENTS)}, proxies=get_proxies(),
                                   verify=VERIFY_SSL_CERTIFICATE).text
@@ -144,6 +153,7 @@ def _extract_links_from_google(html):
 
 
 def _extract_links(html, search_engine):
+    """ Odseparowanie linkow z bing/google """
     if search_engine == 'bing':
         return _extract_links_from_bing(html)
     return _extract_links_from_google(html)
@@ -154,11 +164,19 @@ def _get_search_url(search_engine):
 
 
 def _get_links(query):
+    """ Zwroc linki dla zadanego pytania """
+    """ 
+        Zwraca url przegladarki. Taki link odnosi sie do strony oraz tego co na tej stronie szukamy. 
+        Pierwszy parametr to URL stackoverflow. 
+    """
     search_engine = os.getenv('HOWDOI_SEARCH_ENGINE', 'google')
     search_url = _get_search_url(search_engine)
 
+    # Odpowiedz na zapytanie ktore jest textem
     result = _get_result(search_url.format(URL, url_quote(query)))
+    # bibliotek pyquery ladnie zamienia przydka odpowiedz na html
     html = pq(result)
+    # zwraca linki z pobranego htmla. Ok, ale po co search engine ? W odpowiedzi pojawia sie search engine, ktory trzeba odseparowac ????
     return _extract_links(html, search_engine)
 
 
@@ -242,6 +260,9 @@ def _get_answer(args, links):
 
 
 def _get_instructions(args):
+    """
+        Najpierw pobiera linka dla query
+    """
     links = _get_links(args['query'])
     if not links:
         return False
@@ -279,17 +300,33 @@ def format_answer(link, answer, star_headers):
 
 
 def _enable_cache():
+    """
+        Procedura wewnetrzna.
+        Dwa etapy:
+            1. Stworz folder ktory zawiera cache.
+            2. Zainstalowanie cache (za pomoca biblioteki requests_cache.
+    :return:
+    """
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR)
     requests_cache.install_cache(CACHE_FILE)
 
 
 def _clear_cache():
+    """ Usuwa wszystkie pliki z cacha. Do znalezienie plikow cache używa glob. Gdzie glob szuka -> Zakladam ze na calym filesystemie
+        Cache sklada sie z wielu plikow.
+    """
     for cache in glob.iglob('{0}*'.format(CACHE_FILE)):
         os.remove(cache)
 
 
 def howdoi(args):
+    """
+
+    :param args - parameter with value.
+    :return:
+    """
+    # Przygotowanie query
     args['query'] = ' '.join(args['query']).replace('?', '')
     try:
         return _get_instructions(args) or 'Sorry, couldn\'t find any help with that topic\n'
@@ -321,20 +358,24 @@ def get_parser():
 
 
 def command_line_runner():
+    # zwraca parser zaladowany ze wszystkimi opcjami
     parser = get_parser()
     # Aby pobrac wartosci ustawione przez uzytkownika trzeba uzyc vars. Mamy slownik argument -> nazwa
     args = vars(parser.parse_args())
 
-    // jezeli jest wersja
+    # jezeli jest wersja
     if args['version']:
         print(__version__)
         return
 
+    # nazwa parametru jest atrybutem w obiekcie po parsowaniu. Po uzyciu vars jest kluczem w slowniku.
+    #
     if args['clear_cache']:
         _clear_cache()
         print('Cache cleared successfully')
         return
 
+    # Jezeli nie podaje sie query to wyswietlany jest help. Fajne jest to ze taki help jest generowany przez argparsera.
     if not args['query']:
         parser.print_help()
         return
@@ -343,6 +384,7 @@ def command_line_runner():
     if not os.getenv('HOWDOI_DISABLE_CACHE'):
         _enable_cache()
 
+    # kolorowanie uzaleznione od zmiennej systemowej
     if os.getenv('HOWDOI_COLORIZE'):
         args['color'] = True
 

@@ -10,7 +10,8 @@
 [DONE] 10. Sprawdzic czy nie podanie poyzji oznacza pierwsza pozyacje
 11. [Q] Jezeli opcja -n3 podaje 3 odpowiedzi. Opcje -p1 -p2 -p3 pozwalaja wyswietlic odpowiedzi odpowiedno z pozycji 1 2 lub 3.
     To dlaczego opcja -all nie wyswietla wszystkich pozycji?
-12.
+12. Dodac opcje show cache. Liczba linkow w outpucie.
+13.
 
 
 Sa dwa rodzaje zlych zapytan:
