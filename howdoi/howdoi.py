@@ -26,6 +26,7 @@ import requests_cache
 import sys
 from . import __version__
 
+# Potrzebne do pokolorowania kodu
 from pygments import highlight
 from pygments.lexers import guess_lexer, get_lexer_by_name
 from pygments.formatters.terminal import TerminalFormatter
@@ -79,6 +80,7 @@ SEARCH_URLS = {
 # Black start i format do odpowiedzi. Jezeli uzyty parameter -n z wiecej niz 1.
 STAR_HEADER = u('\u2605')
 ANSWER_HEADER = u('{2}  Answer from {0} {2}\n{1}')
+NOANSWER_HEADER = u('{1}  No valid answer from link {0} {1}\n')
 # Wyswietlane gdy istnieje odpowiedz (znaleziono ja), ale nie ma dla niej tekstu
 NO_ANSWER_MSG = '< no answer given >'
 # Lokalizacja cache.
@@ -148,6 +150,11 @@ def _extract_links_from_bing(html):
 
 
 def _extract_links_from_google(html):
+    """
+        Zwraca liste generowana z linkami wydobytymi ze strony.
+    :param html:
+    :return:
+    """
     return [a.attrib['href'] for a in html('.l')] or \
         [a.attrib['href'] for a in html('.r')('a')]
 
@@ -179,7 +186,9 @@ def _get_links(query):
     # zwraca linki z pobranego htmla. Ok, ale po co search engine ? W odpowiedzi pojawia sie search engine, ktory trzeba odseparowac ????
     return _extract_links(html, search_engine)
 
-
+"""
+    Zwroc link z danej pozycji
+"""
 def get_link_at_pos(links, position):
     if not links:
         return False
@@ -192,6 +201,15 @@ def get_link_at_pos(links, position):
 
 
 def _format_output(code, args):
+    """
+        Zwroc pokolorowany kod.
+        Procedura:
+            1. Stworz najpierw lexera (wpierw na podstawie tagow, jezelie sie nie da to go zgaduje)
+            2. Pokoloruj kod lexerem
+    :param code:
+    :param args:
+    :return:
+    """
     if not args['color']:
         return code
     lexer = None
@@ -218,28 +236,48 @@ def _format_output(code, args):
 
 
 def _is_question(link):
+    """ Regular expression. Dobre linki:
+            OK  -> questions/12343
+            BAD -> questions
+            OK  -> questions/345
+    """
     return re.search('questions/\d+/', link)
 
 
 def _get_questions(links):
+    """
+        Filtruje list. Zostawia tylko te linki ktore
+    :param links:
+    :return:
+    """
     return [link for link in links if _is_question(link)]
 
-
+"""
+    Zwraca odpowiedz z linka
+"""
 def _get_answer(args, links):
+    """
+        Odpowiedz z linku -> skomplikowane toto
+    :param args:
+    :param links:
+    :return:
+    """
     link = get_link_at_pos(links, args['pos'])
     if not link:
         return False
     if args.get('link'):
         return link
+    """ Po co ta zakladka votes ? Wybor tej zakladki robi sortowanie po votes malejaca """
     page = _get_result(link + '?answertab=votes')
     html = pq(page)
-
+    """ Odpowiedz o najwyzszej liczbie glosow """
     first_answer = html('.answer').eq(0)
 
     instructions = first_answer.find('pre') or first_answer.find('code')
     args['tags'] = [t.text for t in html('.post-tag')]
 
     if not instructions and not args['all']:
+        # Jezeli nie udalo sie znalesc kodu ktory jest odpowiedzia to
         text = get_text(first_answer.find('.post-text').eq(0))
     elif args['all']:
         texts = []
@@ -259,17 +297,47 @@ def _get_answer(args, links):
     return text
 
 
+
+def format_no_answer(link, star_headers):
+    """
+        Noanswer format
+        :param link:
+        :param star_headers:
+        :return:
+    """
+    return NOANSWER_HEADER.format(link, star_headers)
+
 def _get_instructions(args):
     """
-        Najpierw pobiera linka dla query
+        Pobranie linkow dla query.
+        Wyrzucenie tych ktore nie sa pytaniami
+        Jezeli jakies sa filtrowane to jest wyswietl.
+        Wyswietl tyle odpowiedzi ile zarzadano i z zadanej pozycji.
+    """
+
+
+    """
+        Najpierw pobiera linka dla query. Zwraca liste.        
     """
     links = _get_links(args['query'])
     if not links:
         return False
 
+    """
+        Only leave questions. Czyli inne filtruje
+    """
     question_links = _get_questions(links)
     if not question_links:
         return False
+
+    """ Liczne przefiltrowanych linkow """
+    if len(links) != len(question_links):
+        diff = abs(len(question_links) - len(links))
+        print("{0} links filtered as not a question.".format(diff))
+        """ TODO: Use list comprehension for find diff """
+    if len(links) > len(question_links):
+        diff = [item for item in links if item not in question_links]
+        print(diff)
 
     only_hyperlinks = args.get('link')
     star_headers = (args['num_answers'] > 1 or args['all'])
@@ -279,17 +347,27 @@ def _get_instructions(args):
     spliter_length = 80
     answer_spliter = '\n' + '=' * spliter_length + '\n\n'
 
+    """ Wyswietl tyle odpowiedzi ile chce uzytkownik (domyslnie 1)"""
     for answer_number in range(args['num_answers']):
         current_position = answer_number + initial_position
         args['pos'] = current_position
         link = get_link_at_pos(question_links, current_position)
+        """ Teraz z linka pobieramy  """
         answer = _get_answer(args, question_links)
+        """ Odpowiedzi moze byc mniej niz num_answers. W szczegolnosci moze byc pusta odpowiedz """
         if not answer:
             continue
         if not only_hyperlinks:
+            """ Formatowanie odpowiedzi """
             answer = format_answer(link, answer, star_headers)
         answer += '\n'
+        """ Lista odpowiedzi"""
         answers.append(answer)
+
+        """ If not answers then return information about that"""
+        if ''.join(answers) == '\n' * args['num_answers']:
+            return format_no_answer(link, star_headers)
+
     return answer_spliter.join(answers)
 
 
@@ -369,7 +447,6 @@ def command_line_runner():
         return
 
     # nazwa parametru jest atrybutem w obiekcie po parsowaniu. Po uzyciu vars jest kluczem w slowniku.
-    #
     if args['clear_cache']:
         _clear_cache()
         print('Cache cleared successfully')
