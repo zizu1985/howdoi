@@ -391,7 +391,7 @@ def _enable_cache():
 
 
 def _clear_cache():
-    """ Usuwa wszystkie pliki z cacha. Do znalezienie plikow cache używa glob. Gdzie glob szuka -> Zakladam ze na calym filesystemie
+    """ Usuwa wszystkie pliki z cacha. Do znalezienie plikow cache uzywa glob. Gdzie glob szuka -> Zakladam ze na calym filesystemie
         Cache sklada sie z wielu plikow.
     """
     for cache in glob.iglob('{0}*'.format(CACHE_FILE)):
