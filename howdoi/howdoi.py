@@ -148,6 +148,11 @@ def _extract_links_from_bing(html):
 
 
 def _extract_links_from_google(html):
+    """
+        List of links is returned
+    :param html:
+    :return:
+    """
     return [a.attrib['href'] for a in html('.l')] or \
         [a.attrib['href'] for a in html('.r')('a')]
 
