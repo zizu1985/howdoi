@@ -11,11 +11,12 @@
 11. [Q] Jezeli opcja -n3 podaje 3 odpowiedzi. Opcje -p1 -p2 -p3 pozwalaja wyswietlic odpowiedzi odpowiedno z pozycji 1 2 lub 3.
     To dlaczego opcja -all nie wyswietla wszystkich pozycji?
 12. Dodac opcje show cache. Liczba linkow w outpucie.
-13.
-
+[DONE] 13. Jezeli nie ma odpowiedzi dla zapytania (mimo ze zapytania istnieja) to wyswietla text ze nie ma odpowiedzi)
+14. Wybieranie najlepszej
 
 Sa dwa rodzaje zlych zapytan:
     "Jak skompresowac plik?" -> "Sorry, couldn't find any help with that topic\n""
     "moe" -> "MOE doesn't support categorical variables[913 chars]r.\n" !"
 
 7. Sumulacja braku sieci i powinien byc rzucony wyjatek
+

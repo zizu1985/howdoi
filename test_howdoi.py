@@ -118,13 +118,6 @@ class HowdoiTestCase(unittest.TestCase):
 
         os.environ['HOWDOI_SEARCH_ENGINE'] = ''
 
-    def test_when_net_is_disabled(self):
-        """ Put strange value as search engine. Something which does not exist in SEARCH_URLS"""
-        self.disable_network()
-        for query in self.queries:
-            self.assertTrue(self.call_howdoi(query))
-        self.enable_network()
-
     def test_answer_links_using_l_option(self):
         """
             Link do odpowiedzi zawsze zawiera questions.
