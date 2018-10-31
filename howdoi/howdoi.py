@@ -334,7 +334,7 @@ def _get_instructions(args):
     if len(links) != len(question_links):
         diff = abs(len(question_links) - len(links))
         print("{0} links filtered as not a question.".format(diff))
-        """ TODO: Use list comprehension for find diff """
+        print("Total links: {0}. Filtered links: {1}".format(len(question_links),len(links)))
     if len(links) > len(question_links):
         diff = [item for item in links if item not in question_links]
         print(diff)
