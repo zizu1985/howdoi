@@ -334,7 +334,7 @@ def _get_instructions(args):
     if len(links) != len(question_links):
         diff = abs(len(question_links) - len(links))
         print("{0} links filtered as not a question.".format(diff))
-        """ TODO: Use list comprehension for find diff """
+        print("Total links: {0}. Filtered links: {1}".format(len(question_links),len(links)))
     if len(links) > len(question_links):
         diff = [item for item in links if item not in question_links]
         print(diff)
@@ -432,6 +432,8 @@ def get_parser():
                         action='store_true')
     parser.add_argument('-v', '--version', help='displays the current version of howdoi',
                         action='store_true')
+    parser.add_argument('-s', '--stats', help='displays the filtering statistics of howdoi',
+                        action='store_true')
     return parser
 
 
@@ -450,6 +452,10 @@ def command_line_runner():
     if args['clear_cache']:
         _clear_cache()
         print('Cache cleared successfully')
+        return
+
+    if args['stats']:
+        print("TBD")
         return
 
     # Jezeli nie podaje sie query to wyswietlany jest help. Fajne jest to ze taki help jest generowany przez argparsera.

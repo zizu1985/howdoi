@@ -5,6 +5,7 @@ howdoi
         :target: https://xkcd.com/1168/
 
 instant coding answers via the command line
+Used as training for git & github.
 -------------------------------------------
 
 .. image:: https://secure.travis-ci.org/gleitz/howdoi.png?branch=master
