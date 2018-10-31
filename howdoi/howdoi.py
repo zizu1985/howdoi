@@ -24,6 +24,7 @@ import re
 import requests
 import requests_cache
 import sys
+import tkinter
 from . import __version__
 
 # Potrzebne do pokolorowania kodu
