@@ -432,6 +432,8 @@ def get_parser():
                         action='store_true')
     parser.add_argument('-v', '--version', help='displays the current version of howdoi',
                         action='store_true')
+    parser.add_argument('-s', '--stats', help='displays the filtering statistics of howdoi',
+                        action='store_true')
     return parser
 
 
@@ -450,6 +452,10 @@ def command_line_runner():
     if args['clear_cache']:
         _clear_cache()
         print('Cache cleared successfully')
+        return
+
+    if args['stats']:
+        print("TBD")
         return
 
     # Jezeli nie podaje sie query to wyswietlany jest help. Fajne jest to ze taki help jest generowany przez argparsera.
